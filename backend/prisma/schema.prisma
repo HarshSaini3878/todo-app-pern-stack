@@ -17,11 +17,12 @@ model User{
   createdAt DateTime  @default(now())
 }
 model Todo {
-  id          Int     @id @default(autoincrement()) 
+  id          Int     @id @default(autoincrement())  // ✅ Ensure id is Int
   title       String
   description String?
   completed   Boolean  @default(false)
-  userId      String
+  userId      String  // Keeps userId as String (matching User model)
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
 }
+

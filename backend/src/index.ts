@@ -4,6 +4,7 @@ import { PrismaClient } from "@prisma/client";
 
 const app = express();
 const prisma = new PrismaClient();
+
 app.use(cors());
 app.use(express.json());
 
@@ -15,7 +16,7 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 // 📌 Get all Todos
-app.get("/todos", async (req: Request, res: Response) => {
+app.get("/todos", async (req: Request, res: Response): Promise<void> => {
   try {
     const todos = await prisma.todo.findMany();
     res.json(todos);
@@ -24,23 +25,24 @@ app.get("/todos", async (req: Request, res: Response) => {
   }
 });
 
-// ✨ Create a Todo
-app.post("/todos", async (req: Request, res: Response) => {
-  // Define type for the request body
+
+app.post("/todos", async (req: Request, res: Response): Promise<void> => {
   interface TodoInput {
     title: string;
-    description: string;
+    description?: string;
+    userId: string; // Ensure userId is included
   }
 
-  const { title, description }: TodoInput = req.body;
+  const { title, description, userId }: TodoInput = req.body;
 
-  if (!title || !description) {
-    return res.status(400).json({ error: "Title and description are required" });
+  if (!title || !userId) {
+    res.status(400).json({ error: "Title and userId are required" });
+    return;
   }
 
   try {
     const newTodo = await prisma.todo.create({
-      data: { title, description },
+      data: { title, description, userId },
     });
     res.status(201).json(newTodo);
   } catch (error) {
@@ -48,31 +50,35 @@ app.post("/todos", async (req: Request, res: Response) => {
   }
 });
 
+
 // ✅ Update a Todo (Mark as Completed)
-app.put("/todos/:id", async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id); // Convert ID to a number
-
-  if (isNaN(id)) {
-    return res.status(400).json({ error: "Invalid ID format" });
-  }
-
-  try {
-    const updatedTodo = await prisma.todo.update({
-      where: { id },
-      data: { completed: true }, // Update completed status
-    });
-    res.json(updatedTodo);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to update todo" });
-  }
-});
+app.put("/todos/:id", async (req: Request, res: Response): Promise<void> => {
+    const id = parseInt(req.params.id);
+  
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid ID format" });
+      return;
+    }
+  
+    try {
+      const updatedTodo = await prisma.todo.update({
+        where: { id }, // ✅ Correct field
+        data: { completed: true },
+      });
+      res.json(updatedTodo);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update todo" });
+    }
+  });
+  
 
 // ❌ Delete a Todo
-app.delete("/todos/:id", async (req: Request, res: Response) => {
-  const id = parseInt(req.params.id); // Convert ID to a number
+app.delete("/todos/:id", async (req: Request, res: Response): Promise<void> => {
+  const id = parseInt(req.params.id);
 
   if (isNaN(id)) {
-    return res.status(400).json({ error: "Invalid ID format" });
+    res.status(400).json({ error: "Invalid ID format" });
+    return;
   }
 
   try {
