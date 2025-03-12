@@ -25,7 +25,29 @@ app.get("/todos", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-
+app.post(
+  "/registerUser",
+  async (req: Request, res: Response): Promise<void> => {
+    interface UserInput {
+      name: string;
+      email: string;
+      password: string;
+    }
+    const { name, email, password }: UserInput = req.body;
+    if (!name || !email || !password) {
+      res.status(400).json({ error: "Credentials  required" });
+      return;
+    }
+    try {
+      const newUser = await prisma.user.create({
+        data: { name, email, password },
+      });
+      res.status(201).json(newUser);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to register user" });
+    }
+  }
+);
 app.post("/todos", async (req: Request, res: Response): Promise<void> => {
   interface TodoInput {
     title: string;
@@ -33,9 +55,9 @@ app.post("/todos", async (req: Request, res: Response): Promise<void> => {
     userId: string; // Ensure userId is included
   }
 
-  const { title, description, userId }: TodoInput = req.body;
+  const { title, description, userId="3813b455-9078-4e21-abba-628c2f47f55e" }: TodoInput = req.body;
 
-  if (!title || !userId) {
+  if (!title ||!userId ) {
     res.status(400).json({ error: "Title and userId are required" });
     return;
   }
@@ -50,27 +72,25 @@ app.post("/todos", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-
 // ✅ Update a Todo (Mark as Completed)
 app.put("/todos/:id", async (req: Request, res: Response): Promise<void> => {
-    const id = parseInt(req.params.id);
-  
-    if (isNaN(id)) {
-      res.status(400).json({ error: "Invalid ID format" });
-      return;
-    }
-  
-    try {
-      const updatedTodo = await prisma.todo.update({
-        where: { id }, // ✅ Correct field
-        data: { completed: true },
-      });
-      res.json(updatedTodo);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update todo" });
-    }
-  });
-  
+  const id = parseInt(req.params.id);
+
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid ID format" });
+    return;
+  }
+
+  try {
+    const updatedTodo = await prisma.todo.update({
+      where: { id }, // ✅ Correct field
+      data: { completed: true },
+    });
+    res.json(updatedTodo);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to update todo" });
+  }
+});
 
 // ❌ Delete a Todo
 app.delete("/todos/:id", async (req: Request, res: Response): Promise<void> => {
